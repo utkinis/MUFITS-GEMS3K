@@ -1,0 +1,158 @@
+RUNSPEC   ################### RUNSPEC section begins here ######################
+
+METRIC    ^^^^^^^^^^^^ We use the METRIC units ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+USEREOS   ^^^^^^ We switch the program to the USEREOS module ^^^^^^^^^^^^^^^^^^^
+  USEREOS-1PHASE.CONFIG  /              The shared library (USEREOS.dll on PC)
+                                        must be in the simulation directory.
+                                        The configuration file is
+                                        USEREOS-1PHASE.CONFIG.
+                                        
+AUXARRAY
+--  name      units                     We create the auxiliary array #XCOORD.
+    #XCOORD   M     /                   The X coordinates of brid block centers
+/                                       will be saved in this array.
+
+GRID      ##################### GRID section begins here #######################
+
+          The grid is specified within brackets MAKE-ENDMAKE  
+MAKE      <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+--    grid                              We choose Cartesian gridding
+--    type   nx   ny  nz                option and specify the number of
+      CART   1000  1   1 /              grid blocks along every axis.  
+   
+XYZBOUND
+-- xmin-xmax   ymin-ymax   zmin-zmax    We specify the domain extent in meters.
+   0    100    0    10     2300 2310 /  The reservoir is at the depth of
+                                        2300 meters.
+                                        
+SRCSPECG                                We place the point source MYSRC into
+-- name   ix iy iz                      the grid block ix=1, iy=1, iz=1. Gas
+   MYSRC  1  1  1  /                    will be injected into this domain
+/                                       through the point source.
+
+BOUNDARY                                We create the ghost boundary grid block
+  2  6* I+ 5* INFTHIN 1* 3* 1* 2 /      at the boundary x=100. ACTNUM=2 in this
+/                                       grid block (parameters are not changing
+                                        with time in the block).
+
+ENDMAKE   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+EQUALS                                  We equal
+  PORO     0.3      /                   - porosity to 0.3 
+  PERMX    100      /                   - permeability to 100 mD
+/
+
+PROPS     ####################### PROPS section begins here ####################
+
+          The fluid properties are specified within brackets EOS-ENDEOS
+EOS       <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+/
+          The fluid properties are calculated using the user-supplied shared
+          library. No keywords within EOS-ENDEOS needed.
+
+ENDEOS    >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  
+
+          The relative permeabilities are specified within brackets SAT-ENDSAT
+SAT       <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+/
+          The flow is single-phase. The relative permeability and capillary
+          pressure don't need to be specified.
+
+ENDSAT    >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+          Rock properties are specified within brackets ROCK-ENDROCK
+ROCK      <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+/
+
+ROCKDH                                  We equal
+   2500 1.0 /                           - rock density to 2500 kg/m3
+                                        - specific heat of rock to 1 kJ/kg/K 
+
+ENDROCK   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+INIT      ####################### INIT section begins here #####################
+
+REGALL    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          The following EQUALREG is applied to all grid blocks including the
+          ghost grid block for boundary conditions.
+
+EQUALREG
+-- -------- -------- -------- --------
+-- mnemonic value    region   region ID
+-- -------- -------- -------- --------   We specify that
+   PRES     200      INCONUM  1       /  - initial reservoir pres. is 200 bar
+   TEMPC    50                        /  - initial temperature is 50 C
+   ZFN2     0.1                       /  - reservoir fluid mass composition
+   ZFCH4    0.9                       /    is (0.1,0.0,0.9)
+-- -------- -------- -------- --------   Note, the as specified in the
+/                                        configuration file the names of the 
+                                         fluid components are (N2, O2, CH4).
+                                         ZF<name> is the mnamonic of the 
+                                         corresponding component mass fraction.
+
+EQUALNAM      
+-- -------- -------- --------
+-- mnemonic value    name
+-- -------- -------- --------           We specify that the injected gas is
+   PRES     200      MYSRC   /          at T=30C and P=200 bar. Its composition
+   TEMPC    30               /          is (0.77,0.23,0.0). Note, that ZFCH4
+   ZFN2     0.77             /          must be specified here to override the
+   ZFO2     0.23             /          value specified by the previous 
+   ZFCH4    0.0              /          EQUALREG.
+-- -------- -------- --------   
+/   
+
+COPY                                    We copy XCOORD into #XCOORD. 
+  XCOORD  #XCOORD /
+/  
+ 
+RPTSUM                            
+  #XCOORD PRES TEMPC 
+  ZFN2 ZFO2 ZFCH4 DGAS SGAS 
+  VISGAS ENTHMGAS PGAS 
+  CN2-GAS CO2-GAS CCH4-GAS /            These parameters are reported at every
+                                        report time. The mnemonics D<name>,
+                                        S<name>, VIS<name> ENTHM<name>, and 
+                                        P<name> correspond to the density,
+                                        the saturation, the viscosity, the 
+                                        specific enthalpy, and the pressure of 
+                                        phase <name>. Note, that as specified in 
+                                        the shared library, the name of the gas 
+                                        phase is GAS.
+                                        The mnemonic C<name>-<phase> is the 
+                                        mass fraction of component <name> in 
+                                        phase <phase>.
+ 
+SCHEDULE   #################### SCHEDULE section begins here ####################
+
+SRCINJE
+-- name  target      max-P  vol.rate    We specify that the point source is 
+  MYSRC  RATEIN  1*   220   20       /  operated at constant volumetric rate of
+/                                       20 m3/day. The maximum pressure in the
+                                        grid block where MYSRC is, cannot exceed
+                                        220 bar (this maximum is never reached in
+                                        the simulation and thus is irrelevant.
+
+TUNING                                  We specify that the next time step is
+  0.01 0.25 /                           0.01 days and the maximum time step is
+                                        0.25 days.
+ 
+TSTEP                                   We simulate 100 days of injection
+  10*10 /                               reporting data every 10 days.
+    
+POST      ####################### POST section begins here #####################
+
+CONVERT                                 We convert output to the format
+                                        recognized by ParaView.
+
+POSTSPEC                                This set of keywords aims at reporting 
+   1* RESULT.CSV /                      distributions of selected parameters
+RPTPOST                                 at t=100 days to a CSV file. We report 
+   #XCOORD ZFN2 ZFO2 ZFCH4 TEMPC DGAS / data to RESULTS.CSV. The CSV file 
+POSTBLK2                                contain the columns for #XCOORD, ZFN2,
+   1 1000 1 1 1 1 /                     ... The parameters are reported for all
+/                                       grid block in the domain.
+   
+END         ###################################################################

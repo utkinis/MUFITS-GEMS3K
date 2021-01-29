@@ -1,0 +1,186 @@
+RUNSPEC   ################### RUNSPEC section begins here ######################
+
+NOCASC
+
+METRIC    ^^^^^^^^^^^^ We use the METRIC units ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+USEREOS 
+  gems-data.lst /                       The shared library (USEREOS.dll on PC)
+                                        must be in the simulation directory.
+                                        The configuration file is
+                                        gems-data.lst.
+  
+ISOTHERM
+
+MECHDISP
+
+GRAVITY
+  0 /
+
+AUXARRAY
+--  name      units                     We create the auxiliary array #XCOORD.
+    #XCOORD   M     /                   The X coordinates of brid block centers
+/                                       will be saved in this array.
+
+GRID      ##################### GRID section begins here #######################
+
+          The grid is specified within brackets MAKE-ENDMAKE  
+MAKE      <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+--    grid                              We select Cartesian gridding
+--    type   nx  ny  nz                 option and specify the number of
+      CART   100  1   1 /               grid blocks along every axis.  
+   
+XYZBOUND
+-- xmin-xmax   ymin-ymax   zmin-zmax    We specify the domain extent in meters.
+   0  0.5      0  1      10 11 /        The reservoir is at the depth of
+                                        10 meters.
+										
+SRCSPECG                                We place the point source MYSRC into
+-- name   ix iy iz                      the grid block ix=1, iy=1, iz=1. MgCl2
+   MYSRC  1  1  1  /                    will be injected into this domain
+/                                       through the point source.
+
+BOUNDARY                                We create the ghost boundary grid block
+  2  6* I+ 5* INFTHIN 1* 3* 1* 2 /      at the boundary x=0.5. ACTNUM=2 in this
+/                                       grid block (parameters are not changing
+                                        with time in the block).
+
+ENDMAKE   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+EQUALS                                  We equal
+  PORO     0.32    /                    - porosity to 0.32 
+  PERMX    1000    /                    - permeability to 1000 mD
+  PERMY    1000    /
+/
+
+PROPS     ####################### PROPS section begins here ####################
+
+          The fluid properties are specified within brackets EOS-ENDEOS
+EOS       <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+/
+          The fluid properties are calculated using the user-supplied shared
+          library. No keywords within EOS-ENDEOS needed.
+
+ENDEOS    >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  
+
+          The relative permeabilities are specified within brackets SAT-ENDSAT
+SAT       <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+/
+
+SATTAB
+   0.0  0.00  1.00 /                          1st column is the water saturation
+   0.5  0.25  0.25 /                          2nd column is the relative permeability of water
+   1.0  1.00  0.00 /                          3rd column is the relative permeability of solid
+/   
+
+
+ENDSAT    >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+          Rock properties are specified within brackets ROCK-ENDROCK
+ROCK      <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+/
+
+MDISPL                                        We set longitudinal dispersion length
+LIQ 0      1       /                          for the liquid phase
+0   0.0021 0.0021  /
+1   0.0021 0.0021  /
+/
+
+ENDROCK   >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
+INIT      ####################### INIT section begins here #####################
+
+REGALL
+EQUALREG
+-- -------- ------------ -------- --------
+-- mnemonic value        region   region ID
+-- -------- ------------ -------- --------     We specify that
+   PRES     1            INCONUM  1       /    - initial reservoir pres. is 1 bar
+   TEMPC    25                            /    - initial temperature is 25 C
+   ZFC      3.964197e-06                  /    - mass fractions of elements
+   ZFCa     1.322796e-05                  /
+   ZFCl     7.091792e-09                  /
+   ZFH      1.118890e-01                  /
+   ZFMg     2.430909e-09                  /
+-- -------- ------------ -------- --------
+/   
+
+EQUALNAM
+-- -------- -------- --------
+-- mnemonic value    name
+-- -------- -------- --------                  We specify that the injected water
+   PRES     1   MYSRC         /                is at P=1 bar.
+   TEMPC    25                /
+   ZFC	    1.201178e-12      /
+   ZFCa	    4.008161e-12      /
+   ZFCl	    7.091239e-05      /
+   ZFH	    1.118803e-01      /
+   ZFMg	    2.430719e-05      /
+/   
+
+COPY                                           We copy XCOORD into #XCOORD. 
+  XCOORD  #XCOORD /
+/  
+
+RPTSUM
+  #XCOORD FLUXI#T DENT PRES PLIQ SLIQ RELLIQ PSOL SSOL RELSOL TEMPC ZFC ZFCa ZFCl ZFH ZFMg ZFO 
+  #Ca #Mg #Cl
+  #Gr #Arg #Cal #Dis-Dol #Portlan #Brc /       These parameters are reported at every
+                                               report time step.
+
+    
+SCHEDULE   #################### SCHEDULE section begins here ####################
+
+VARS                                           We specify various numerical controls
+  PRES MAXV 2000 /                             for better convergence.
+  PRES YEPS 1e-4 /
+  COMP YEPS 1e-5 /
+/
+
+REPORTS
+  CONV MATBAL LINSOL /
+
+ILUTFILL
+  7 /
+
+ILUTDROP
+  1e-5 /
+
+SRCINJE
+-- name  target      max-P  vol.rate           We specify that the point source is 
+  MYSRC  RATEIN  1*  2      0.259 /            operated at constant volumetric rate of
+/                                              0.259 m3/day. The maximum pressure in the
+                                               grid block where MYSRC is, cannot exceed
+                                               2 bar (this maximum is never reached in
+                                               the simulation and thus is irrelevant.
+
+TUNING
+  1* 1 1* 0.0001 /                             We spacify that the maximum time step
+                                               is 1 day.
+
+TSTEP                                          We simulate 21000 s of injection
+  105*0.0023 /                                 reporting data every 200 s
+
+HTIMING
+    
+POST      ####################### POST section begins here #####################
+
+CONVERT
+
+POSTSPEC                                       This set of keywords aims at reporting 
+   1* RESULT.CSV /                             distributions of selected parameters
+                                               at t=21000 s to a CSV file.
+                                               We report data to RESULTS.CSV.
+RPTPOST                                                   
+   #XCOORD FLUXI#T DENT
+   ZFC ZFCa ZFCl ZFH ZFMg ZFO        
+   #Ca #Mg #Cl                                            
+   #Gr #Arg #Cal #Dis-Dol #Portlan #Brc /      We include ionic concentrations in fluid
+                                               and concentrations of minerals in solid phase                                 
+POSTBLK2                                
+   1 100 1 1 1 1 /                             The parameters are reported for all
+/                                              grid blocks in the domain.                 
+
+END         ###################################################################
