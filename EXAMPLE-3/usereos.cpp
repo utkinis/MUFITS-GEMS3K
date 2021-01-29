@@ -35,7 +35,7 @@ static GemsModule mod;
 void USEREOS_mp_USEREOS_READCONFIGURATIONFILE(char *filename, int *ierr, char *titul,
                                               long filenameLength, long titulLength) {
   std::string cFilename(filename, filename + filenameLength);
-  memset(titul, ' ', titulLength);
+  memset(titul, ' ', size_t(titulLength));
   memcpy(titul, moduleName, strlen(moduleName));
 
   *ierr = mod.init(cFilename);
@@ -47,11 +47,9 @@ void USEREOS_mp_USEREOS_GETDIMENSIONS(int *nComponents, int *nPhaseMax, int *nAu
   *nAux = mod.nEndMembers() + mod.nComponents();
 }
 
-void USEREOS_mp_USEREOS_GETGLOBALPARAMETERS(int *nc, int *np, int *na, char *cmpNames,
-                                            double *molWeights, char *phNames, char *auxNames,
-                                            char *auxUnits, int8_t *opt, long cmpNamesLength,
-                                            long phNamesLength, long auxNamesLength,
-                                            long auxUnitsLength) {
+void USEREOS_mp_USEREOS_GETGLOBALPARAMETERS(int *, int *, int *, char *cmpNames, double *molWeights,
+                                            char *phNames, char *auxNames, char *auxUnits,
+                                            int8_t *opt, long, long, long, long) {
   mod.getParams(cmpNames, molWeights, phNames, auxNames);
   char unit[] = "NODIM   ";
   for (int idx = 0; idx < mod.nEndMembers() + mod.nComponents(); ++idx) {
@@ -61,8 +59,8 @@ void USEREOS_mp_USEREOS_GETGLOBALPARAMETERS(int *nc, int *np, int *na, char *cmp
   opt[1] = 0;
 }
 
-void USEREOS_mp_USEREOS_PHASEEQUILIBRIUM(int *nc, int *np, int *na, double *pres, double *temp,
-                                         double *z, int *nPhase, double *props, int8_t *phaseId,
+void USEREOS_mp_USEREOS_PHASEEQUILIBRIUM(int *, int *, int *, double *pres, double *temp, double *z,
+                                         int *nPhase, double *props, int8_t *phaseId,
                                          double *auxArray, int8_t *mode) {
   mod.calculateEquilibrium(*pres, *temp, z, *nPhase, props, phaseId, auxArray, *mode);
 }
@@ -79,37 +77,36 @@ int GemsModule::init(const std::string &filename) {
     return status;
   }
 
-  compNames.resize(nComponents());
-  molarWeights.resize(nComponents());
-  phaseNames.resize(maxPhases());
-  auxiliaryNames.resize(nEndMembers() + nComponents());
+  compNames.resize(size_t(nComponents()));
+  molarWeights.resize(size_t(nComponents()));
+  phaseNames.resize(size_t(maxPhases()));
+  auxiliaryNames.resize(size_t(nEndMembers() + nComponents()));
 
-  for (int idx = 0; idx < nComponents(); ++idx) {
+  for (size_t idx = 0; idx < size_t(nComponents()); ++idx) {
     memset(&compNames[idx], ' ', 3);
     memcpy(&compNames[idx], dch->ICNL[dch->xic[idx]],
            std::min(strlen(dch->ICNL[dch->xic[idx]]), size_t(3)));
   }
 
-  for (int idx = 0; idx < dch->nPSb; ++idx) {
+  for (size_t idx = 0; idx < size_t(dch->nPSb); ++idx) {
     memset(&phaseNames[idx], ' ', 3);
     memcpy(&phaseNames[idx], dch->PHNL[dch->xph[idx]],
            std::min(strlen(dch->PHNL[dch->xph[idx]]), size_t(3)));
   }
   memcpy(&phaseNames[size_t(dch->nPSb)], "SOL", 3);
 
-  for (int idx = 0; idx < nEndMembers(); ++idx) {
+  for (size_t idx = 0; idx < size_t(nEndMembers()); ++idx) {
     std::string aux("#");
     aux.append(dch->DCNL[dch->xdc[idx]]);
     memset(&auxiliaryNames[idx], ' ', 8);
     memcpy(&auxiliaryNames[idx], aux.c_str(), std::min(aux.size(), size_t(8)));
   }
 
-  for (int idx = 0; idx < nComponents(); ++idx) {
+  for (size_t idx = 0; idx < size_t(nComponents()); ++idx) {
     std::string aux("#");
     aux.append(dch->ICNL[dch->xic[idx]]);
-    memset(&auxiliaryNames[size_t(idx) + nEndMembers()], ' ', 8);
-    memcpy(&auxiliaryNames[size_t(idx) + nEndMembers()], aux.c_str(),
-           std::min(aux.size(), size_t(8)));
+    memset(&auxiliaryNames[idx + nEndMembers()], ' ', 8);
+    memcpy(&auxiliaryNames[idx + nEndMembers()], aux.c_str(), std::min(aux.size(), size_t(8)));
     molarWeights[idx] = dch->ICmm[dch->xic[idx]];
   }
 
@@ -126,8 +123,7 @@ void GemsModule::getParams(char cmpNames[], double molWeights[], char phNames[],
 }
 
 bool GemsModule::calculateEquilibrium(const double P, const double T, const double z[], int &nPhase,
-                                      double props[], int8_t phaseId[], double auxArray[],
-                                      int8_t mode) {
+                                      double props[], int8_t phaseId[], double auxArray[], int8_t) {
   dbr->NodeStatusCH = NEED_GEM_AIA;
   dbr->IterDone = 0;
   dbr->P = systemPressure;
@@ -137,7 +133,7 @@ bool GemsModule::calculateEquilibrium(const double P, const double T, const doub
   dbr->Vi = 0;
 
   // Specify system composition
-  for (int idx = 0; idx < nComponents(); ++idx) {
+  for (size_t idx = 0; idx < size_t(nComponents()); ++idx) {
     dbr->bIC[idx] = z[idx] / molarWeights[idx];
   }
 
@@ -149,7 +145,7 @@ bool GemsModule::calculateEquilibrium(const double P, const double T, const doub
     logFailure(P, T, z, status);
   }
 
-  size_t offset = 6 + nComponents();
+  size_t offset = size_t(6 + nComponents());
   std::fill(props, props + maxPhases() * offset, 0.0);
 
   double fluidVol = 0.0;
@@ -159,7 +155,7 @@ bool GemsModule::calculateEquilibrium(const double P, const double T, const doub
     fluidVol += dbr->vPS[iPh];
     fluidMass += dbr->mPS[iPh];
     fluidEnthalpy += node->Ph_Enthalpy(iPh);
-    for (int iC = 0; iC < nComponents(); ++iC) {
+    for (size_t iC = 0; iC < size_t(nComponents()); ++iC) {
       props[6 + iC] += dbr->bPS[iPh * dch->nICb + iC] * molarWeights[iC];
     }
   }
@@ -203,14 +199,14 @@ bool GemsModule::calculateEquilibrium(const double P, const double T, const doub
       props[nFluidPhases() * offset + 1] = solEnthalpy / solMass;
       props[nFluidPhases() * offset + 2] = solidViscosity;
       props[nFluidPhases() * offset + 3] = solVol / totVol;
-      for (int iC = 0; iC < mod.nComponents(); ++iC) {
+      for (size_t iC = 0; iC < size_t(mod.nComponents()); ++iC) {
         props[nFluidPhases() * offset + 6 + iC] = mod.dbr->bSP[iC] * mod.molarWeights[iC] / solMass;
       }
     } else {
       props[nFluidPhases() * offset + 0] = solDensity + solidCompressibility * (P - systemPressure);
       props[nFluidPhases() * offset + 2] = solidViscosity;
     }
-    phaseId[nFluidPhases()] = nFluidPhases() + 1;
+    phaseId[nFluidPhases()] = int8_t(nFluidPhases() + 1);
   }
 
   props[0] = fluidDensity + fluidCompressibility * (P - systemPressure);
@@ -252,7 +248,7 @@ void GemsModule::logFailure(const double P, const double T, const double z[], lo
 
   std::cerr << std::setw(79) << std::left << "| BULK COMPOSITION:" << '|' << std::endl;
   std::cerr << "|          ";
-  for (int idx = 0; idx < nComponents(); ++idx) {
+  for (size_t idx = 0; idx < size_t(nComponents()); ++idx) {
     char name[4] = {};
     memcpy(name, compNames[idx].data(), 3);
     std::cerr << std::setw(16) << std::left << name;
