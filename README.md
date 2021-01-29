@@ -1,4 +1,6 @@
 # MUFITS-GEMS3K
+[![DOI](https://zenodo.org/badge/334063009.svg)](https://zenodo.org/badge/latestdoi/334063009)
+
 Code for the paper "Using user-supplied modules for fluid properties prediction with the MUFITS reservoir simulator"
 
 ## Installation and usage
