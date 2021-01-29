@@ -1,5 +1,8 @@
 #pragma once
 
+#define IPMGEMPLUGIN
+#define NOPARTICLEARRAY
+#define NODEARRAYLEVEL
 #include <GEMS3K/node.h>
 
 #include <cstdint>
