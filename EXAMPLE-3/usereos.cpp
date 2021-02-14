@@ -12,6 +12,8 @@
 
 // Module name appears in MUFITS logs
 const char *moduleName = "GEMS Test module";
+const int filenameLength = 256;
+const int titleLength = 80;
 
 // We model solid and fluid phases as slightly compressible
 const double fluidCompressibility = 1e-7;
@@ -32,24 +34,26 @@ const double systemPressure = 1e5;
 // Instance of GemsModule
 static GemsModule mod;
 
-void USEREOS_mp_USEREOS_READCONFIGURATIONFILE(char *filename, int *ierr, char *titul,
-                                              long filenameLength, long titulLength) {
+void ReadConfigurationFile(char *filename, int *ierr, char *title) {
   std::string cFilename(filename, filename + filenameLength);
-  memset(titul, ' ', size_t(titulLength));
-  memcpy(titul, moduleName, strlen(moduleName));
+  size_t spacePos = cFilename.find(' ');
+  if (spacePos != std::string::npos) {
+    cFilename[cFilename.find(' ')] = '\0';
+  }
+  memset(title, ' ', size_t(titleLength));
+  memcpy(title, moduleName, strlen(moduleName));
 
   *ierr = mod.init(cFilename);
 }
 
-void USEREOS_mp_USEREOS_GETDIMENSIONS(int *nComponents, int *nPhaseMax, int *nAux) {
+void GetDimensions(int *nComponents, int *nPhaseMax, int *nAux) {
   *nComponents = mod.nComponents();
   *nPhaseMax = mod.maxPhases();
   *nAux = mod.nEndMembers() + mod.nComponents();
 }
 
-void USEREOS_mp_USEREOS_GETGLOBALPARAMETERS(int *, int *, int *, char *cmpNames, double *molWeights,
-                                            char *phNames, char *auxNames, char *auxUnits,
-                                            int8_t *opt, long, long, long, long) {
+void GetGlobalParameters(char *cmpNames, double *molWeights, char *phNames, char *auxNames,
+                         char *auxUnits, int8_t *opt) {
   mod.getParams(cmpNames, molWeights, phNames, auxNames);
   char unit[] = "NODIM   ";
   for (int idx = 0; idx < mod.nEndMembers() + mod.nComponents(); ++idx) {
@@ -59,9 +63,8 @@ void USEREOS_mp_USEREOS_GETGLOBALPARAMETERS(int *, int *, int *, char *cmpNames,
   opt[1] = 0;
 }
 
-void USEREOS_mp_USEREOS_PHASEEQUILIBRIUM(int *, int *, int *, double *pres, double *temp, double *z,
-                                         int *nPhase, double *props, int8_t *phaseId,
-                                         double *auxArray, int8_t *mode) {
+void PhaseEquilibrium(double *pres, double *temp, double *z, int *nPhase, double *props,
+                      int8_t *phaseId, double *auxArray, int8_t *mode) {
   mod.calculateEquilibrium(*pres, *temp, z, *nPhase, props, phaseId, auxArray, *mode);
 }
 

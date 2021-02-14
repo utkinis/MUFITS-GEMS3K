@@ -5,10 +5,8 @@ NOCASC
 METRIC    ^^^^^^^^^^^^ We use the METRIC units ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 USEREOS 
-  gems-data.lst /                       The shared library (USEREOS.dll on PC)
-                                        must be in the simulation directory.
-                                        The configuration file is
-                                        gems-data.lst.
+  'USEREOS-GEMS3K.DLL'  'gems-data.lst' / The shared library is 'USEREOS-GEMS3K.dll' on PC.
+                                          The configuration file is 'gems-data.lst'.
   
 ISOTHERM
 

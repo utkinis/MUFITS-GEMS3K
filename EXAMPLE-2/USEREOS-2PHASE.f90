@@ -4,69 +4,80 @@ module USEREOS
     
     private
     
-    integer,parameter::USEREOS_ncmax=2  ! Maximum value of nc (nc<=ncmax)
-    integer,parameter::USEREOS_npmax=2  ! Maximum value of np (np<=npmax)
+    integer,parameter::ncmax=2  ! Maximum value of nc (nc<=ncmax)
+    integer,parameter::npmax=2  ! Maximum value of np (np<=npmax)
     
-    integer,parameter::USEREOS_nc=2              ! - Number of components    
-    integer,parameter::USEREOS_np=USEREOS_nc     ! - Maximum number of phases
+    integer,parameter::nc=ncmax             ! - Number of components    
+    integer,parameter::np=npmax             ! - Maximum number of phases
+    
+    integer::na=0                           ! - Size of the auxiliary array
 
     !<<<<<<<<<<<<<<<<<<< These data are loaded from the configuration file <<<<<<<<<<<<<<<<<<<<<<<<
     real(8)::Pref=0./0.                         ! - Reference pressure
     real(8)::Tref=0./0.                         ! - Reference temperature
     
-    character(3)::CompNames(USEREOS_ncmax)=''   ! - The components names (3-byte characters) are also the phase names
-    real(8)::MW(USEREOS_ncmax)=0./0.            ! - Molar weight of each component [g/mol]
-    real(8)::DEN(USEREOS_ncmax)=0./0.           ! - Density at the reference pressure and temperature
-    real(8)::HC(USEREOS_ncmax)=0./0.            ! - Molar heat capacity of each component  [kJ/mol]
-    real(8)::Visc(USEREOS_ncmax)=0./0.          ! - Viscosity of each phase [cP]
-    real(8)::Alpha(USEREOS_ncmax)=0./0.         ! - isothermal compressibility [1/bar]
-    real(8)::Beta(USEREOS_ncmax)=0./0.          ! - heat expansion coefficient [1/K]
+    character(3)::CompNames(ncmax)=''   ! - The components names (3-byte characters) are also the phase names
+    real(8)::MW(ncmax)=0./0.            ! - Molar weight of each component [g/mol]
+    real(8)::DEN(ncmax)=0./0.           ! - Density at the reference pressure and temperature
+    real(8)::HC(ncmax)=0./0.            ! - Molar heat capacity of each component  [kJ/mol]
+    real(8)::Visc(ncmax)=0./0.          ! - Viscosity of each phase [cP]
+    real(8)::Alpha(ncmax)=0./0.         ! - isothermal compressibility [1/bar]
+    real(8)::Beta(ncmax)=0./0.          ! - heat expansion coefficient [1/K]
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     
     !<<<<<<<<<<< The shared library must export the following variables & routines <<<<<<<<<<<<<<<<
-    public::USEREOS_ReadConfigurationFile   ! - reads the configuration file. The file name is supplied by MUFITS
-    public::USEREOS_GetDimensions    ! - returns to MUFITS the number of components and the maximum number of phases
-    public::USEREOS_GetGlobalParameters     ! - returns to MUFITS some general parameters of thermodynamic system
-    public::USEREOS_PhaseEquilibrium             ! - calculates the phase equilibrium for a given pressure, temperature,
-                                     !   and bulk composition
+    public::ReadConfigurationFile   ! - reads the configuration file. The file name is supplied by MUFITS
+    public::GetDimensions           ! - returns to MUFITS the number of components and the maximum number of phases
+    public::GetGlobalParameters     ! - returns to MUFITS some general parameters of thermodynamic system
+    public::PhaseEquilibrium        ! - calculates the phase equilibrium for a given pressure, temperature,
+                                    !   and bulk composition
     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     
 contains
     
     
-    subroutine USEREOS_ReadConfigurationFile(filename,ierr,title) 
-    !DEC$ ATTRIBUTES DLLEXPORT::USEREOS_ReadConfigurationFile
+    subroutine ReadConfigurationFile(filename,ierr,title) bind(c,name='ReadConfigurationFile')
+    !DEC$ ATTRIBUTES DLLEXPORT ::ReadConfigurationFile
     
-        character(*),intent(in)::filename        ! name of the configuration file specified by the USEREOS keyword.
+        character,intent(in)::filename(256)      ! name of the configuration file specified by the USEREOS keyword.
         integer,intent(out)::ierr                ! if 0, then no errors
-        character(80),intent(out)::title         ! Describes the shared library. This string is reported into the LOG-file
+        character,intent(out)::title(80)         ! Describes the shared library. This string is reported into the LOG-file
         
         !-----------------------------------------------------------------------------------------------------------
-
+        character(256)::filename_internal
+        character(80)::title_internal
+        
         integer,parameter::iport=3891
-        integer::ic,jc
+        integer::ic,jc,i
         logical::ex
         
-        title='IMMISCIBLE TWO-PHASE FLOW'
+        title_internal='IMMISCIBLE TWO-PHASE FLOW'
+        
+        do i=1,80
+            title(i)=title_internal(i:i)
+        enddo            
+        do i=1,256
+            filename_internal(i:i)=filename(i)
+        enddo          
         
         !<<<<<<<<<<<<<<<<<<<< reading the configuration file <<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        inquire(file=filename,exist=ex)
+        inquire(file=filename_internal,exist=ex)
         if(not(ex)) then
             ierr=-1
             return
         endif            
         
-        open(iport,file=filename,status='old')
+        open(iport,file=filename_internal,status='old')
         
         read(iport,*)  Pref,Tref;  Pref=Pref*1e5
-        read(iport,*)  CompNames(1:USEREOS_nc)
-        read(iport,*)  MW(1:USEREOS_nc);   MW=MW*1e-3
-        read(iport,*)  DEN(1:USEREOS_nc)
-        read(iport,*)  ALPHA(1:USEREOS_nc);  ALPHA=ALPHA/1e5
-        read(iport,*)  BETA(1:USEREOS_nc)
-        read(iport,*)  HC(1:USEREOS_nc);   HC=HC*1e3
-        read(iport,*)  VISC(1:USEREOS_nc); VISC=VISC*1e-3        
+        read(iport,*)  CompNames(1:nc)
+        read(iport,*)  MW(1:nc);   MW=MW*1e-3
+        read(iport,*)  DEN(1:nc)
+        read(iport,*)  ALPHA(1:nc);  ALPHA=ALPHA/1e5
+        read(iport,*)  BETA(1:nc)
+        read(iport,*)  HC(1:nc);   HC=HC*1e3
+        read(iport,*)  VISC(1:nc); VISC=VISC*1e-3        
         close(iport)
         !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         
@@ -76,7 +87,7 @@ contains
             return
         endif            
         
-        do ic=1,USEREOS_nc
+        do ic=1,nc
             if(trim(CompNames(ic)).eq.'') then
                 ierr=2
                 return
@@ -107,7 +118,7 @@ contains
             endif               
         enddo            
         
-        do ic=2,USEREOS_nc
+        do ic=2,nc
             do jc=1,ic-1
                 if(trim(CompNames(ic)).eq.trim(CompNames(jc))) then
                     ierr=6
@@ -119,34 +130,33 @@ contains
         
         ierr=0
 
-    end subroutine USEREOS_ReadConfigurationFile
+    end subroutine ReadConfigurationFile
     
     !##############################################################################################################
     
-    subroutine USEREOS_GetDimensions(NComponents,NPhaseMax,NAuxArray) 
-    !DEC$ ATTRIBUTES DLLEXPORT::USEREOS_GetDimensions
+    subroutine GetDimensions(NComponents,NPhaseMax,NAuxArray) bind(c,name='GetDimensions')
+    !DEC$ ATTRIBUTES DLLEXPORT ::GetDimensions
     
         integer,intent(out)::NComponents                    ! - number of components of the thermodynamic system
         integer,intent(out)::NPhaseMax                      ! - maximum number of phases that the mixture can split into    
         integer,intent(out)::NAuxArray                      ! - number of auxiliary arrays
         !---------------------------------------------------------------------------------------------------------- 
-        NComponents=USEREOS_nc
-        NPhaseMax=USEREOS_np  
+        NComponents=nc
+        NPhaseMax=np  
         NAuxArray=0
     
-    end subroutine USEREOS_GetDimensions
+    end subroutine GetDimensions
     
     !##############################################################################################################
     
-    subroutine USEREOS_GetGlobalParameters(nc,np,na,CMPnames,MolWeights,PHnames, &
-                                                                 AuxArrNames,AuxArrDimens,opt) 
-    !DEC$ ATTRIBUTES DLLEXPORT::USEREOS_GetGlobalParameters
-        integer,intent(in)::nc,np,na
-        character(3)::CMPnames(nc)                          ! - names of the components
+    subroutine GetGlobalParameters(CMPnames,MolWeights,PHnames,AuxArrNames,AuxArrDimens,opt) bind(c,name='GetGlobalParameters')
+    !DEC$ ATTRIBUTES DLLEXPORT ::GetGlobalParameters
+
+        character::CMPnames(3,nc)                           ! - names of the components
         real(8)::MolWeights(nc)                             ! - molar weights
-        character(3)::PHnames(np)                           ! - names of the phases
-        character(8)::AuxArrNames(na)                       ! - names of auxiliary quantities. Each name must begin with '#'
-        character(8)::AuxArrDimens(na)                      ! - dimensions of auxiliary quantities
+        character::PHnames(3,npmax)                         ! - names of the phases
+        character::AuxArrNames(8,na)                        ! - names of auxiliary quantities. Each name must begin with '#'
+        character::AuxArrDimens(8,na)                       ! - dimensions of auxiliary quantities
         integer(1),intent(out)::opt(8)                      ! - Options (an option #i is on if opt(i)=1. Otherwise if opt(i)=0 the option is off.
                                                             !   if opt(1)=1, then the shared library must export the relative permeability
                                                             !   if opt(1)=0, then the relative permeability is specified in the MUFITS RUN-file.
@@ -154,24 +164,31 @@ contains
                                                             !   i.e. the capillary pressure
                                                             !   if opt(2)=0, then the capillary pressure is specified in the MUFITS RUN-file.
         !----------------------------------------------------------------------------------------------------------
-
-        CMPnames(1:USEREOS_nc)=CompNames(1:USEREOS_nc)
-        MolWeights(1:USEREOS_nc)=MW(1:USEREOS_nc)
         
-        PHnames(1:USEREOS_np)=CompNames(1:USEREOS_nc)
+        integer::i
+
+        do i=1,3
+        CMPnames(i,1:nc)=CompNames(1:nc)(i:i)
+        enddo
+        
+        MolWeights(1:nc)=MW(1:nc)
+        
+        do i=1,3
+        PHnames(i,1:np)=CompNames(1:np)(i:i)
+        enddo
         
         opt=0
         
         !opt(1)=1  !- uncomment this line if the relative permeability will be exported from the shared library
         !opt(2)=1  !- uncomment this line if the capillary pressure curve will be exported from the shared library
 
-    end subroutine USEREOS_GetGlobalParameters
+    end subroutine GetGlobalParameters
     
     !##############################################################################################################
     
-    subroutine USEREOS_PhaseEquilibrium(nc,np,na,Pres,Temp,z,NPhase,Props,PhaseID,AuxArr,Mode)
-    !DEC$ ATTRIBUTES DLLEXPORT::USEREOS_PhaseEquilibrium
-        integer,intent(in)::nc,np,na
+    subroutine PhaseEquilibrium(Pres,Temp,z,NPhase,Props,PhaseID,AuxArr,Mode) bind(c,name='PhaseEquilibrium')
+    !DEC$ ATTRIBUTES DLLEXPORT ::PhaseEquilibrium
+    
         real(8),intent(in)::Pres    ! pressure  [Pa]
         real(8),intent(in)::Temp    ! temperature [K]
         real(8),intent(in)::z(nc)   ! bulk (molar at opt(1)=1, or mass at opt(1)=0) composition 
@@ -191,16 +208,16 @@ contains
         
         integer::NPhase
                                   
-        real(8)::Props(6+nc,np)    ! Parameters of the phases
-                                    ! 1 - density [kg/m3]
-                                    ! 2 - enthalpy [J/kg]
-                                    ! 3 - viscosity [Pa*s]
-                                    ! 4 - saturation [-]
-                                    ! 5 - relative permeability [-] (must be specified only if opt(1)=1)
-                                    ! 6 - relative phase pressure [Pa] (must be specified only if opt(2)=1)
-                                    ! 7:6+USEREOS_nc - phase composition [-] 
+        real(8)::Props(6+nc,npmax)    ! Parameters of the phases
+                                      ! 1 - density [kg/m3]
+                                      ! 2 - enthalpy [J/kg]
+                                      ! 3 - viscosity [Pa*s]
+                                      ! 4 - saturation [-]
+                                      ! 5 - relative permeability [-] (must be specified only if opt(1)=1)
+                                      ! 6 - relative phase pressure [Pa] (must be specified only if opt(2)=1)
+                                      ! 7:6+nc - phase composition [-] 
         
-        integer(1)::PhaseID(np)  ! phase ID
+        integer(1)::PhaseID(npmax)  ! phase ID
         
         !--------------------------------------------------------------------------------------------------------------------
         
@@ -228,6 +245,6 @@ contains
         Props(6,1)=0d0
         Props(6,2)=Props(4,2)*1e5
 
-    end subroutine USEREOS_PhaseEquilibrium
+    end subroutine PhaseEquilibrium
     
 end module USEREOS    

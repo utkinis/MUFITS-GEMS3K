@@ -11,20 +11,15 @@
 
 // Exported functions for USEREOS
 
-MF_API void USEREOS_mp_USEREOS_READCONFIGURATIONFILE(char *filename, int *ierr, char *titul,
-                                                     long fnameLength, long titulLength);
+MF_API void ReadConfigurationFile(char *filename, int *ierr, char *title);
 
-MF_API void USEREOS_mp_USEREOS_GETDIMENSIONS(int *nComponents, int *nPhaseMax, int *nAux);
+MF_API void GetDimensions(int *nComponents, int *nPhaseMax, int *nAux);
 
-MF_API void USEREOS_mp_USEREOS_GETGLOBALPARAMETERS(int *nc, int *np, int *na, char *cmpNames,
-                                                   double *molWeights, char *phNames,
-                                                   char *auxNames, char *auxUnits, int8_t *opt,
-                                                   long cmpNamesLength, long phNamesLength,
-                                                   long auxNamesLength, long auxUnitsLength);
+MF_API void GetGlobalParameters(char *cmpNames, double *molWeights, char *phNames, char *auxNames,
+                                char *auxUnits, int8_t *opt);
 
-MF_API void USEREOS_mp_USEREOS_PHASEEQUILIBRIUM(int *nc, int *np, int *na, double *pres,
-                                                double *temp, double *z, int *nPhase, double *props,
-                                                int8_t *phaseId, double *auxArray, int8_t *mode);
+MF_API void PhaseEquilibrium(double *pres, double *temp, double *z, int *nPhase, double *props,
+                             int8_t *phaseId, double *auxArray, int8_t *mode);
 
 // Class GemsModule provides functionality related to coupling GEMS3K and MUFITS
 class GemsModule {

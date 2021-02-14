@@ -4,17 +4,19 @@ RUNSPEC   ################### RUNSPEC section begins here ######################
 METRIC    ^^^^^^^^^^^^ We use the METRIC units ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 USEREOS   ^^^^^^ We switch the program to the USEREOS module ^^^^^^^^^^^^^^^^^^^
-  USEREOS-2PHASE.CONFIG  /              The shared library (USEREOS.dll on PC)
-                                        must be in the simulation directory.
-                                        The configuration file is
-                                        USEREOS-2PHASE.CONFIG.
+  'USEREOS-2PHASE.DLL'  'USEREOS-2PHASE.CONFIG' /              
+                                        The dynamic load library is
+                                        USEREOS-2PHASE.DLL. The configuration 
+                                        file is USEREOS-2PHASE.CONFIG.
+                                        Both files are in the simulation 
+                                        directory.
                                         
 ISOTHERM   ^^^^^^^^^^^^^^^^ The simulation is isothermal ^^^^^^^^^^^^^^^^^^^^^^^
 
 AUXARRAY
 --  name      units                     We create the auxiliary array #XCOORD.
     #XCOORD   M     /                   The X coordinates of brid block centers
-/                                       will be saved in this array.
+/                                       will be save in this array.
 
 GRID      ##################### GRID section begins here #######################
 
@@ -63,8 +65,8 @@ SAT       <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 SATTAB
 -- swat  krw   krow
    0.0   0.00  1.000 /     1st column is the water saturation
-   0.1   0.01  0.729 /     2nd column is the relative permeability of water
-   0.2   0.04  0.512 /     3rd column is the relative permeability of oil
+   0.1   0.01  0.729 /     2nd column is the relatice permeability of water
+   0.2   0.04  0.512 /     3rd column is the relatice permeability of oil
    0.3   0.09  0.343 /
    0.4   0.16  0.216 /
    0.5   0.25  0.125 /
@@ -104,7 +106,7 @@ EQUALNAM
 -- -------- -------- --------
 -- mnemonic value    name
 -- -------- -------- --------           We specify that the injected water
-   PRES     200      MYSRC   /          is at P=200 bar (stock tank pressure).
+   PRES     200      MYSRC   /          is at P=200 bar (stock tank pressure).   
    ZFWAT    1.0              /
 -- -------- -------- --------    
 /   
@@ -118,7 +120,7 @@ RPTSUM
    ZFWAT ZFOIL SWAT SOIL 
    RELWAT RELOIL COIL-OIL COIL-WAT 
    CWAT-OIL CWAT-WAT /                  These parameters are reported at every
-                                        report time step. The mnemonics D<name>,
+                                        report time. The mnemonics D<name>,
                                         S<name>, VIS<name> ENTHM<name>, and 
                                         P<name> correspond to the density,
                                         the saturation, the viscosity, the \
@@ -136,7 +138,7 @@ SRCINJE
 -- name  target      max-P  vol.rate    We specify that the point source is 
   MYSRC  RATEIN  1*  220     10      /  operated at constant volumetric rate of
 /                                       10 m3/day. The maximum pressure in the
-                                        grid block where MYSRC is, cannot exceed
+                                        grid block where MUSRC is, cannot exceed
                                         220 bar (this maximum is never reached in
                                         the simulation and thus is irrelevant.
 
