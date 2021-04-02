@@ -1,5 +1,5 @@
 # USEREOS
-[![DOI](https://zenodo.org/badge/334063009.svg)](https://zenodo.org/badge/latestdoi/334063009)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4659943.svg)](https://doi.org/10.5281/zenodo.4659943)
 
 Code for the paper "Using user-supplied modules for fluid properties prediction with the MUFITS reservoir simulator"
 
