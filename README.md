@@ -1,4 +1,4 @@
-# MUFITS-GEMS3K
+# USEREOS
 [![DOI](https://zenodo.org/badge/334063009.svg)](https://zenodo.org/badge/latestdoi/334063009)
 
 Code for the paper "Using user-supplied modules for fluid properties prediction with the MUFITS reservoir simulator"
@@ -7,7 +7,7 @@ Code for the paper "Using user-supplied modules for fluid properties prediction 
 To run the examples presented in the paper, you need the MUFITS simulator executable file, `H64.EXE`, and a user-supplied module in the form of a shared library with name `USEREOS.DLL`. The simulator executable is located at the [MUFITS website](http://www.mufits.imec.msu.ru/download.html). There are three ways to get the `USEREOS` modules:
 
 1. Get the pre-built binaries and source code from the [USEREOS section of MUFITS website](http://www.mufits.imec.msu.ru/example-usereos.html);
-2. Download pre-built binaries and source code from [Github releases](https://github.com/utkinis/MUFITS-GEMS3K/releases);
+2. Download pre-built binaries and source code from [Github releases](https://github.com/utkinis/USEREOS/releases);
 3. Build the shared libraries directly from the source code
 
 ## Build instructions
@@ -18,5 +18,5 @@ To access the latest version of the code, you need to either download the source
 To clone the repository, open the command-line terminal and enter the following command:
 
 ```
-> git clone https://github.com/utkinis/MUFITS-GEMS3K.git
+> git clone https://github.com/utkinis/USEREOS.git
 ```
